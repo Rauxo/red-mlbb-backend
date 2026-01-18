@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order Confirmation</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; line-height: 1.6; padding: 20px">
+    <h2 style="color: #00c9ff; padding: 20px; background-color: #293032">
+      Thanks for Your Purchase from Wuru Store.
+    </h2>
+
+    <table style="padding: 0 20px">
+      <tr>
+        <td width="150px" style="border: 1px solid #000; padding: 10px">
+          Order Id
+        </td>
+        <td width="150px" style="border: 1px solid #000; padding: 10px">
+          {orderId}
+        </td>
+      </tr>
+      <tr>
+        <td width="150px" style="border: 1px solid #000; padding: 10px">
+          Amount
+        </td>
+        <td width="150px" style="border: 1px solid #000; padding: 10px">
+          {amount}
+        </td>
+      </tr>
+      <tr>
+        <td width="150px" style="border: 1px solid #000; padding: 10px">
+          Price
+        </td>
+        <td width="150px" style="border: 1px solid #000; padding: 10px">
+          {price}
+        </td>
+      </tr>
+      <tr>
+        <td width="150px" style="border: 1px solid #000; padding: 10px">
+          Product Info
+        </td>
+        <td width="150px" style="border: 1px solid #000; padding: 10px">
+          {p_info}
+        </td>
+      </tr>
+      <tr>
+        <td width="150px" style="border: 1px solid #000; padding: 10px">
+          User ID
+        </td>
+        <td width="150px" style="border: 1px solid #000; padding: 10px">
+          {userId}
+        </td>
+      </tr>
+      <tr></tr>
+      <tr>
+        <td width="150px" style="border: 1px solid #000; padding: 10px">
+          Zone ID
+        </td>
+        <td width="150px" style="border: 1px solid #000; padding: 10px">
+          {zoneId}
+        </td>
+      </tr>
+      <tr>
+        <td width="150px" style="border: 1px solid #000; padding: 10px">
+          Status
+        </td>
+        <td width="150px" style="border: 1px solid #000; padding: 10px">
+          success
+        </td>
+      </tr>
+    </table>
+
+    <p>
+      Kindly <a href="https://wurustore.in/">Login</a> to your account to
+      check your order details. Keep Ordering!
+    </p>
+    <p style="font-style: italic; margin-top: 20px">
+      Best regards,
+      <br />
+      <b>Wuru Store.</b>
+    </p>
+  </body>
+</html>

@@ -67,8 +67,8 @@ app.use(
 );
 
 const allowedOrigins = [
-  "https://wurustore.in",
-  "https://www.wurustore.in",
+  "https://redmlbb.com",
+  "https://www.redmlbb.com",
   "http://localhost:3000",
   "http://localhost:5173",
   "http://10.108.2.191:3000",

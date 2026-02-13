@@ -45,8 +45,8 @@ const {
   MOOGOLD_PARTNER_ID,
   MOOGOLD_SECRET,
 
-  GATEWAY_CREATE_URL = "https://expay1.com/api/create-order",
-  GATEWAY_STATUS_URL = "https://expay1.com/api/check-order-status",
+  GATEWAY_CREATE_URL = "https://codeshop.in/api/create-order",
+  GATEWAY_STATUS_URL = "https://codeshop.in/api/check-order-status",
   API_TOKEN,
   EXPAY_WEBHOOK_SECRET,
   FRONTEND_BASE_URL,
@@ -1697,328 +1697,328 @@ const placeOrder = async (
   }
 };
 
-router.post("/gateway/webhook", async (req, res) => {
-  const tag = "EXPAY_WEBHOOK";
-  const started = Date.now();
-  try {
-    logLine(
-      tag,
-      `hit ip=${_ip(req)} event=${String(req.get("x-expay-event") || "")}`
-    );
+// router.post("/gateway/webhook", async (req, res) => {
+//   const tag = "EXPAY_WEBHOOK";
+//   const started = Date.now();
+//   try {
+//     logLine(
+//       tag,
+//       `hit ip=${_ip(req)} event=${String(req.get("x-expay-event") || "")}`
+//     );
 
-    const secret = String(EXPAY_WEBHOOK_SECRET || "");
-    if (!secret) {
-      logLine(tag, "no webhook secret configured");
-      return res.status(500).json({ ok: false, err: "no_webhook_secret" });
-    }
+//     const secret = String(EXPAY_WEBHOOK_SECRET || "");
+//     if (!secret) {
+//       logLine(tag, "no webhook secret configured");
+//       return res.status(500).json({ ok: false, err: "no_webhook_secret" });
+//     }
 
-    const raw = Buffer.isBuffer(req.body)
-      ? req.body.toString("utf8")
-      : typeof req.rawBody === "string"
-      ? req.rawBody
-      : "";
+//     const raw = Buffer.isBuffer(req.body)
+//       ? req.body.toString("utf8")
+//       : typeof req.rawBody === "string"
+//       ? req.rawBody
+//       : "";
 
-    if (!raw) {
-      logLine(tag, "no raw body captured (check express.json verify)");
-      return res.status(400).json({ ok: false, err: "no_raw_body" });
-    }
+//     if (!raw) {
+//       logLine(tag, "no raw body captured (check express.json verify)");
+//       return res.status(400).json({ ok: false, err: "no_raw_body" });
+//     }
 
-    const tsHeader = String(req.get("x-expay-timestamp") || "");
-    const sigHeader = String(req.get("x-expay-signature") || "");
-    const deliveryId = String(req.get("x-expay-delivery") || "");
+//     const tsHeader = String(req.get("x-expay-timestamp") || "");
+//     const sigHeader = String(req.get("x-expay-signature") || "");
+//     const deliveryId = String(req.get("x-expay-delivery") || "");
 
-    const { t, v1 } = _parseSigHeader(sigHeader);
-    const ts = tsHeader || t || "";
-    if (!ts || !v1) {
-      logLine(tag, "bad signature headers", { tsHeader, sigHeader });
-      return res.status(400).json({ ok: false, err: "bad_sig_header" });
-    }
+//     const { t, v1 } = _parseSigHeader(sigHeader);
+//     const ts = tsHeader || t || "";
+//     if (!ts || !v1) {
+//       logLine(tag, "bad signature headers", { tsHeader, sigHeader });
+//       return res.status(400).json({ ok: false, err: "bad_sig_header" });
+//     }
 
-    const expected = _expectedWebhookHmac(ts, raw);
-    if (String(v1).toLowerCase() !== String(expected).toLowerCase()) {
-      logLine(tag, "bad signature", { got: v1, expected });
-      return res.status(400).json({ ok: false, err: "bad_signature" });
-    }
+//     const expected = _expectedWebhookHmac(ts, raw);
+//     if (String(v1).toLowerCase() !== String(expected).toLowerCase()) {
+//       logLine(tag, "bad signature", { got: v1, expected });
+//       return res.status(400).json({ ok: false, err: "bad_signature" });
+//     }
 
-    // reply FAST
-    res.sendStatus(200);
-    logLine(tag, `ack 200 sent (${_ms(started)}ms) delivery=${deliveryId}`);
+//     // reply FAST
+//     res.sendStatus(200);
+//     logLine(tag, `ack 200 sent (${_ms(started)}ms) delivery=${deliveryId}`);
 
-    runAsync(async () => {
-      const wTag = "EXPAY_WEBHOOK_WORKER";
-      const wStart = Date.now();
+//     runAsync(async () => {
+//       const wTag = "EXPAY_WEBHOOK_WORKER";
+//       const wStart = Date.now();
 
-      let payload = {};
-      try {
-        payload = JSON.parse(raw);
-      } catch (e) {
-        logErr(wTag, "json parse error", e);
-        return;
-      }
+//       let payload = {};
+//       try {
+//         payload = JSON.parse(raw);
+//       } catch (e) {
+//         logErr(wTag, "json parse error", e);
+//         return;
+//       }
 
-      const result = payload.result || payload;
-      const orderId = String(result.orderId || result.order_id || "").trim();
-      if (!orderId) {
-        logLine(wTag, "missing orderId in payload", result);
-        return;
-      }
+//       const result = payload.result || payload;
+//       const orderId = String(result.orderId || result.order_id || "").trim();
+//       if (!orderId) {
+//         logLine(wTag, "missing orderId in payload", result);
+//         return;
+//       }
 
-      logLine(wTag, `payload orderId=${orderId} (${_ms(wStart)}ms)`, {
-        txnStatus: result.txnStatus,
-        amount: result.amount,
-        utr: result.utr || null,
-      });
+//       logLine(wTag, `payload orderId=${orderId} (${_ms(wStart)}ms)`, {
+//         txnStatus: result.txnStatus,
+//         amount: result.amount,
+//         utr: result.utr || null,
+//       });
 
-      // 🚨 CRITICAL FIX: Check paymentRequest first (for cart orders)
-      const paymentRequest = await paymentRequestModel.findOne({
-        orderId: String(orderId),
-      });
+//       // 🚨 CRITICAL FIX: Check paymentRequest first (for cart orders)
+//       const paymentRequest = await paymentRequestModel.findOne({
+//         orderId: String(orderId),
+//       });
 
-      if (paymentRequest && paymentRequest.orderType === "cart") {
-        const eventType = String(req.get("x-expay-event") || "").toUpperCase();
+//       if (paymentRequest && paymentRequest.orderType === "cart") {
+//         const eventType = String(req.get("x-expay-event") || "").toUpperCase();
 
-        let txn = String(result.txnStatus || "").toUpperCase();
+//         let txn = String(result.txnStatus || "").toUpperCase();
 
-        // 🔁 Fallback to webhook event (Expay behavior)
-        if (!txn && eventType === "PAYMENT_SUCCESS") txn = "SUCCESS";
-        if (!txn && eventType === "PAYMENT_FAILED") txn = "FAILED";
-        if (!txn && eventType === "PAYMENT_CANCELLED") txn = "CANCELLED";
+//         // 🔁 Fallback to webhook event (Expay behavior)
+//         if (!txn && eventType === "PAYMENT_SUCCESS") txn = "SUCCESS";
+//         if (!txn && eventType === "PAYMENT_FAILED") txn = "FAILED";
+//         if (!txn && eventType === "PAYMENT_CANCELLED") txn = "CANCELLED";
 
-        const paid = Number(result.amount || 0);
-        const expected = Number(paymentRequest.txn_amount || 0);
+//         const paid = Number(result.amount || 0);
+//         const expected = Number(paymentRequest.txn_amount || 0);
 
-        logLine(wTag, `CART payment check`, {
-          txn,
-          paid,
-          expected,
-          utr: result.utr || null,
-        });
+//         logLine(wTag, `CART payment check`, {
+//           txn,
+//           paid,
+//           expected,
+//           utr: result.utr || null,
+//         });
 
-        // ❌ STOP: payment NOT successful
-        if (!isSuccessTxn(txn)) {
-          logLine(wTag, `CART ignored – payment not successful txn=${txn}`);
-          return;
-        }
+//         // ❌ STOP: payment NOT successful
+//         if (!isSuccessTxn(txn)) {
+//           logLine(wTag, `CART ignored – payment not successful txn=${txn}`);
+//           return;
+//         }
 
-        // ❌ STOP: amount mismatch
-        if (paid !== expected) {
-          logLine(
-            wTag,
-            `CART ignored – amount mismatch paid=${paid} expected=${expected}`
-          );
-          return;
-        }
+//         // ❌ STOP: amount mismatch
+//         if (paid !== expected) {
+//           logLine(
+//             wTag,
+//             `CART ignored – amount mismatch paid=${paid} expected=${expected}`
+//           );
+//           return;
+//         }
 
-        // ❌ STOP: missing UTR
-        if (!result.utr) {
-          logLine(wTag, `CART ignored – missing UTR`);
-          return;
-        }
+//         // ❌ STOP: missing UTR
+//         if (!result.utr) {
+//           logLine(wTag, `CART ignored – missing UTR`);
+//           return;
+//         }
 
-        logLine(wTag, `Processing CART orderId=${orderId}`);
+//         logLine(wTag, `Processing CART orderId=${orderId}`);
 
-        const user = await userModel.findOne({
-          email: paymentRequest.customer_email,
-        });
+//         const user = await userModel.findOne({
+//           email: paymentRequest.customer_email,
+//         });
 
-        if (!user) {
-          logLine(wTag, `User not found for cart order orderId=${orderId}`);
-          return;
-        }
+//         if (!user) {
+//           logLine(wTag, `User not found for cart order orderId=${orderId}`);
+//           return;
+//         }
 
-        let failures = [];
+//         let failures = [];
 
-        // 🔁 Process cart items ONLY AFTER PAYMENT CONFIRMED
-        for (let i = 0; i < paymentRequest.cart.length; i++) {
-          const item = paymentRequest.cart[i];
-          const subOrderId = `${orderId}-${i}`;
+//         // 🔁 Process cart items ONLY AFTER PAYMENT CONFIRMED
+//         for (let i = 0; i < paymentRequest.cart.length; i++) {
+//           const item = paymentRequest.cart[i];
+//           const subOrderId = `${orderId}-${i}`;
 
-          try {
-            await placeOrder(
-              item.apiName,
-              item,
-              orderId,
-              subOrderId,
-              user.email,
-              user.mobile,
-              item.pack.price
-            );
-          } catch (err) {
-            console.error("Cart item failed:", item.productName, err);
+//           try {
+//             await placeOrder(
+//               item.apiName,
+//               item,
+//               orderId,
+//               subOrderId,
+//               user.email,
+//               user.mobile,
+//               item.pack.price
+//             );
+//           } catch (err) {
+//             console.error("Cart item failed:", item.productName, err);
 
-            // ❌ FAIL ENTIRE CART
-            await paymentRequestModel.updateOne(
-              { _id: paymentRequest._id },
-              {
-                $set: {
-                  status: "failed",
-                  failed_reason: `item_failed:${item.productName}`,
-                  utr: result.utr,
-                  updatedAt: new Date(),
-                },
-              }
-            );
+//             // ❌ FAIL ENTIRE CART
+//             await paymentRequestModel.updateOne(
+//               { _id: paymentRequest._id },
+//               {
+//                 $set: {
+//                   status: "failed",
+//                   failed_reason: `item_failed:${item.productName}`,
+//                   utr: result.utr,
+//                   updatedAt: new Date(),
+//                 },
+//               }
+//             );
 
-            return; // ⛔ STOP processing further items
-          }
-        }
+//             return; // ⛔ STOP processing further items
+//           }
+//         }
 
-        // 🧹 Clear user's cart AFTER processing
-        user.cart = [];
-        await user.save();
+//         // 🧹 Clear user's cart AFTER processing
+//         user.cart = [];
+//         await user.save();
 
-        // 📌 Update payment request status
-        // paymentRequest.status = failures.length ? "partial" : "completed";
-        // paymentRequest.utr = result.utr;
-        // await paymentRequest.save();
-        await paymentRequestModel.updateOne(
-          { _id: paymentRequest._id },
-          {
-            $set: {
-              status: failures.length === 0 ? "completed" : "failed",
-              utr: result.utr,
-              updatedAt: new Date(),
-            },
-          }
-        );
+//         // 📌 Update payment request status
+//         // paymentRequest.status = failures.length ? "partial" : "completed";
+//         // paymentRequest.utr = result.utr;
+//         // await paymentRequest.save();
+//         await paymentRequestModel.updateOne(
+//           { _id: paymentRequest._id },
+//           {
+//             $set: {
+//               status: failures.length === 0 ? "completed" : "failed",
+//               utr: result.utr,
+//               updatedAt: new Date(),
+//             },
+//           }
+//         );
 
-        // 💾 Save payment record (UTR guaranteed)
-        await paymentModel.create({
-          orderId,
-          name: paymentRequest.customer_name,
-          email: paymentRequest.customer_email,
-          mobile: paymentRequest.customer_mobile,
-          amount: paid,
-          status: "SUCCESS",
-          utrNumber: result.utr,
-          type: "cart_purchase",
-          createdAt: new Date(),
-        });
+//         // 💾 Save payment record (UTR guaranteed)
+//         await paymentModel.create({
+//           orderId,
+//           name: paymentRequest.customer_name,
+//           email: paymentRequest.customer_email,
+//           mobile: paymentRequest.customer_mobile,
+//           amount: paid,
+//           status: "SUCCESS",
+//           utrNumber: result.utr,
+//           type: "cart_purchase",
+//           createdAt: new Date(),
+//         });
 
-        if (failures.length > 0) {
-          logLine(wTag, `Cart processed with failures: ${failures.join(", ")}`);
-        } else {
-          logLine(wTag, `Cart order ${orderId} fully processed`);
-        }
+//         if (failures.length > 0) {
+//           logLine(wTag, `Cart processed with failures: ${failures.join(", ")}`);
+//         } else {
+//           logLine(wTag, `Cart order ${orderId} fully processed`);
+//         }
 
-        return;
-      }
+//         return;
+//       }
 
-      const base = await colOrders().findOne({ orderId: String(orderId) });
-      if (!base) {
-        logLine(wTag, `order not found in DB orderId=${orderId}`);
-        return;
-      }
+//       const base = await colOrders().findOne({ orderId: String(orderId) });
+//       if (!base) {
+//         logLine(wTag, `order not found in DB orderId=${orderId}`);
+//         return;
+//       }
 
-      if (deliveryId) {
-        await colOrders().updateOne(
-          { orderId: String(orderId) },
-          { $addToSet: { webhook_deliveries: deliveryId } }
-        );
-        logLine(wTag, `saved deliveryId=${deliveryId}`);
-      }
+//       if (deliveryId) {
+//         await colOrders().updateOne(
+//           { orderId: String(orderId) },
+//           { $addToSet: { webhook_deliveries: deliveryId } }
+//         );
+//         logLine(wTag, `saved deliveryId=${deliveryId}`);
+//       }
 
-      const txn = String(result.txnStatus || "").toUpperCase();
-      const paid = to2(result.amount);
-      const want = to2(base.amount);
+//       const txn = String(result.txnStatus || "").toUpperCase();
+//       const paid = to2(result.amount);
+//       const want = to2(base.amount);
 
-      logLine(
-        wTag,
-        `txn=${txn} paid=${paid} want=${want} dbStatus=${base.status}`
-      );
+//       logLine(
+//         wTag,
+//         `txn=${txn} paid=${paid} want=${want} dbStatus=${base.status}`
+//       );
 
-      if (isSuccessTxn(txn)) {
-        if (paid !== want) {
-          logLine(wTag, `amount mismatch -> fail ${paid}!=${want}`);
-          await colOrders().updateOne(
-            { orderId: String(orderId) },
-            {
-              $set: {
-                status: "failed",
-                payment_status: "failed",
-                failed_reason: `amount_mismatch ${paid}!=${want}`,
-                updatedAt: _now(),
-              },
-            }
-          );
-          return;
-        }
+//       if (isSuccessTxn(txn)) {
+//         if (paid !== want) {
+//           logLine(wTag, `amount mismatch -> fail ${paid}!=${want}`);
+//           await colOrders().updateOne(
+//             { orderId: String(orderId) },
+//             {
+//               $set: {
+//                 status: "failed",
+//                 payment_status: "failed",
+//                 failed_reason: `amount_mismatch ${paid}!=${want}`,
+//                 updatedAt: _now(),
+//               },
+//             }
+//           );
+//           return;
+//         }
 
-        const claimedPrev = await claimFulfillment(String(orderId), "webhook");
-        logLine(wTag, `claimFulfillment=${!!claimedPrev}`, {
-          claimedBy: "webhook",
-        });
+//         const claimedPrev = await claimFulfillment(String(orderId), "webhook");
+//         logLine(wTag, `claimFulfillment=${!!claimedPrev}`, {
+//           claimedBy: "webhook",
+//         });
 
-        if (claimedPrev) {
-          await colOrders().updateOne(
-            { orderId: String(orderId) },
-            {
-              $set: {
-                status: "processing",
-                payment_status: "success",
-                paid_amount: paid,
-                paid_at: _now(),
-                updatedAt: _now(),
-                orderDate: _now(),
-              },
-            }
-          );
-          logLine(wTag, `kickFulfill starting (${_ms(wStart)}ms)`);
-          // kickFulfill({ ...claimedPrev, orderId: String(orderId) }, "webhook");
-          kickFulfill(
-            {
-              ...claimedPrev,
-              orderId: String(orderId),
-              gameType: claimedPrev.gameType,
-              region: claimedPrev.region, // ✅ ADD
-            },
-            "webhook"
-          );
-        }
-        return;
-      }
+//         if (claimedPrev) {
+//           await colOrders().updateOne(
+//             { orderId: String(orderId) },
+//             {
+//               $set: {
+//                 status: "processing",
+//                 payment_status: "success",
+//                 paid_amount: paid,
+//                 paid_at: _now(),
+//                 updatedAt: _now(),
+//                 orderDate: _now(),
+//               },
+//             }
+//           );
+//           logLine(wTag, `kickFulfill starting (${_ms(wStart)}ms)`);
+//           // kickFulfill({ ...claimedPrev, orderId: String(orderId) }, "webhook");
+//           kickFulfill(
+//             {
+//               ...claimedPrev,
+//               orderId: String(orderId),
+//               gameType: claimedPrev.gameType,
+//               region: claimedPrev.region, // ✅ ADD
+//             },
+//             "webhook"
+//           );
+//         }
+//         return;
+//       }
 
-      if (isCancelTxn(txn)) {
-        logLine(wTag, `cancel -> set cancelled`);
-        await colOrders().updateOne(
-          { orderId: String(orderId), status: { $ne: "success" } },
-          {
-            $set: {
-              status: "cancelled",
-              failed_reason: "gateway_cancelled",
-              updatedAt: _now(),
-            },
-          }
-        );
-        return;
-      }
+//       if (isCancelTxn(txn)) {
+//         logLine(wTag, `cancel -> set cancelled`);
+//         await colOrders().updateOne(
+//           { orderId: String(orderId), status: { $ne: "success" } },
+//           {
+//             $set: {
+//               status: "cancelled",
+//               failed_reason: "gateway_cancelled",
+//               updatedAt: _now(),
+//             },
+//           }
+//         );
+//         return;
+//       }
 
-      if (isFailedTxn(txn)) {
-        logLine(wTag, `fail -> set failed txn=${txn}`);
-        await colOrders().updateOne(
-          { orderId: String(orderId), status: { $ne: "success" } },
-          {
-            $set: {
-              status: "failed",
-              payment_status: "failed",
-              failed_reason: `gateway_${txn.toLowerCase()}`,
-              updatedAt: _now(),
-            },
-          }
-        );
-        return;
-      }
+//       if (isFailedTxn(txn)) {
+//         logLine(wTag, `fail -> set failed txn=${txn}`);
+//         await colOrders().updateOne(
+//           { orderId: String(orderId), status: { $ne: "success" } },
+//           {
+//             $set: {
+//               status: "failed",
+//               payment_status: "failed",
+//               failed_reason: `gateway_${txn.toLowerCase()}`,
+//               updatedAt: _now(),
+//             },
+//           }
+//         );
+//         return;
+//       }
 
-      logLine(
-        wTag,
-        `pending -> ignore (poller will handle) (${_ms(wStart)}ms)`
-      );
-    });
-  } catch (e) {
-    logErr(tag, "webhook handler error", e);
-    return res.sendStatus(200);
-  }
-});
+//       logLine(
+//         wTag,
+//         `pending -> ignore (poller will handle) (${_ms(wStart)}ms)`
+//       );
+//     });
+//   } catch (e) {
+//     logErr(tag, "webhook handler error", e);
+//     return res.sendStatus(200);
+//   }
+// });
 
 async function pollPendingOrdersBatch() {
   const tag = "BG_POLLER";

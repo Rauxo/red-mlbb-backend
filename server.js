@@ -28,17 +28,8 @@ connectDB();
 const app = express();
 app.set("trust proxy", 1);
 app.use(
-  "/api/order/gateway/webhook",
-  express.raw({ type: "*/*" })
-);
-
-app.use(
   express.json({
     limit: "200kb",
-    verify: (req, _res, buf) => {
-      req.rawBody = buf; 
-      req.rawBodyText = buf.toString("utf8"); 
-    },
   })
 );
 
@@ -85,12 +76,6 @@ app.use(
     allowedHeaders: [
       "Content-Type",
       "Authorization",
-      "X-API-KEY",
-      "X-ExPay-Timestamp",
-      "X-ExPay-Signature",
-      "X-ExPay-Event",
-      "X-ExPay-Delivery",
-      "X-Admin-Key",
     ],
     credentials: true,
   })

@@ -6,6 +6,96 @@ const fetch = require("node-fetch");
 const crypto = require("node:crypto");
 const { moogoldProductDetail, moogoldServerList } = require("../utils/moogold");
 
+
+const crypto = require("crypto");
+
+function yanjieSignature(apiId, apiKey) {
+  return crypto
+    .createHash("md5")
+    .update(String(apiId) + String(apiKey))
+    .digest("hex");
+}
+router.post("/profile", async (req, res) => {
+  try {
+    const api_id = process.env.YANJIE_API_ID;
+    const api_key = process.env.YANJIE_API_KEY;
+
+    const payload = {
+      api_id,
+      api_key,
+      signature: yanjieSignature(api_id, api_key),
+    };
+
+    const r = await axios.post(
+      "https://yanjiestore.com/api/profile",
+      payload,
+      { timeout: 15000 }
+    );
+
+    if (!r.data?.result) {
+      return res.status(400).json({
+        success: false,
+        message: r.data?.msg || "Profile fetch failed",
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: r.data.data, // username, balance, role
+    });
+  } catch (e) {
+    return res.status(500).json({
+      success: false,
+      message: e.message,
+    });
+  }
+});
+
+router.post("/cek-nickname", async (req, res) => {
+  try {
+    const { userid, zoneid, kode } = req.body || {};
+    if (!userid || !kode) {
+      return res.status(400).json({
+        success: false,
+        message: "userid and kode required",
+      });
+    }
+
+    const payload = {
+      api_key: process.env.YANJIE_API_KEY,
+      id: String(userid),
+      server: zoneid ? String(zoneid) : undefined,
+      kode: String(kode),
+    };
+
+    const r = await axios.post(
+      "https://yanjiestore.com/api/cek",
+      payload,
+      { timeout: 15000 }
+    );
+
+    if (r.data?.status === true) {
+      return res.json({
+        success: true,
+        data: {
+          username: r.data.nickname,
+        },
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: r.data?.msg || "Nickname check failed",
+    });
+  } catch (e) {
+    return res.status(500).json({
+      success: false,
+      message: e.message,
+    });
+  }
+});
+
+
 router.post("/moogold/product-detail", express.json(), async (req, res) => {
   try {
     const product_id = String(req.body?.product_id || "").trim();

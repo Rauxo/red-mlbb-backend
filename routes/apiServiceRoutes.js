@@ -466,7 +466,114 @@ async function smilePostPH(path, form, timeoutMs = 15000) {
     clearTimeout(t);
   }
 }
+router.post("/get-role", browserMiddleware, async (req, res) => {
+  try {
+    const { userid, zoneid, apiName, productId } = req.body;
+    console.log("Received get-role request:", { userid, zoneid, productId });
 
+    const uid = process.env.UID;
+    const email = process.env.EMAIL;
+    const time = Math.floor(Date.now() / 1000);
+    const mKey = process.env.KEY;
+
+    // Default to Mobile Legends Philippines with ID 212
+    let product = "mobilelegends";
+    let region = "philliphines";
+    let smileProductId = "212";
+
+    // Only process Magic Chess if we have a product ID and it's explicitly Magic Chess
+    if (productId) {
+      // Find the product in our database
+      const productData = await productModel.findById(productId);
+
+      if (productData && productData.gameType === "magicchessgogo") {
+        console.log("Magic Chess product detected:", {
+          name: productData.name,
+          gameType: productData.gameType,
+          region: productData.region,
+        });
+
+        // Switch to Magic Chess Go Go
+        product = "magicchessgogo";
+        region = "brazil";
+        smileProductId = "23837";
+      }
+    }
+
+    console.log("Final parameters:", {
+      product,
+      region,
+      smileProductId,
+    });
+
+    // GENERATING SIGN
+    const signArr = {
+      uid,
+      email,
+      product,
+      time,
+      userid,
+      zoneid,
+      productid: smileProductId,
+    };
+
+    const sortedSignArr = Object.fromEntries(Object.entries(signArr).sort());
+    const str =
+      Object.keys(sortedSignArr)
+        .map((key) => `${key}=${sortedSignArr[key]}`)
+        .join("&") +
+      "&" +
+      mKey;
+    const sign = md5(md5(str));
+
+    const formData = querystring.stringify({
+      email,
+      uid,
+      userid,
+      zoneid,
+      product,
+      productid: smileProductId,
+      time,
+      sign,
+    });
+
+    let apiUrl;
+    if (region === "brazil") {
+      apiUrl = "https://www.smile.one/br/smilecoin/api/getrole";
+    } else {
+      apiUrl = "https://www.smile.one/ph/smilecoin/api/getrole";
+    }
+
+    console.log("Calling Smile.one API:", apiUrl);
+
+    let role;
+    role = await axios.post(apiUrl, formData, {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    });
+
+    if (role.data.status === 200) {
+      return res.status(200).send({
+        success: true,
+        username: role.data.username,
+        zone: role.data.zone,
+        message: role.data.message,
+      });
+    } else {
+      return res
+        .status(201)
+        .send({ success: false, message: role.data.message });
+    }
+  } catch (error) {
+    console.error("Error in /get-role:", error);
+    return res.status(500).send({
+      success: false,
+      message: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
+  }
+});
 router.post("/getrole_br", async (req, res) => {
   try {
     const { userid, zoneid, product, productid } = req.body || {};

@@ -54,6 +54,7 @@ router.post("/profile", async (req, res) => {
 router.post("/cek-nickname", async (req, res) => {
   try {
     const { userid, zoneid, kode } = req.body || {};
+
     if (!userid || !kode) {
       return res.status(400).json({
         success: false,
@@ -74,6 +75,7 @@ router.post("/cek-nickname", async (req, res) => {
       { timeout: 15000 }
     );
 
+    // ✅ DOC: success = status === true
     if (r.data?.status === true) {
       return res.json({
         success: true,
@@ -87,13 +89,17 @@ router.post("/cek-nickname", async (req, res) => {
       success: false,
       message: r.data?.msg || "Nickname check failed",
     });
+
   } catch (e) {
     return res.status(500).json({
       success: false,
-      message: e.message,
+      message: "Yanjiestore error",
+      error: e.message,
     });
   }
 });
+
+
 
 
 router.post("/moogold/product-detail", express.json(), async (req, res) => {

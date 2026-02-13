@@ -6,6 +6,7 @@ const fetch = require("node-fetch");
 const crypto = require("node:crypto");
 const { moogoldProductDetail, moogoldServerList } = require("../utils/moogold");
 const productModel = require("../models/productModel");
+const md5 = require("md5");
 
 
 // const crypto = require("crypto");

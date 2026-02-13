@@ -466,7 +466,7 @@ async function smilePostPH(path, form, timeoutMs = 15000) {
     clearTimeout(t);
   }
 }
-router.post("/get-role", browserMiddleware, async (req, res) => {
+router.post("/get-role",  async (req, res) => {
   try {
     const { userid, zoneid, apiName, productId } = req.body;
     console.log("Received get-role request:", { userid, zoneid, productId });

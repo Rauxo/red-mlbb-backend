@@ -7,7 +7,7 @@ const crypto = require("node:crypto");
 const { moogoldProductDetail, moogoldServerList } = require("../utils/moogold");
 
 
-const crypto = require("crypto");
+// const crypto = require("crypto");
 
 function yanjieSignature(apiId, apiKey) {
   return crypto

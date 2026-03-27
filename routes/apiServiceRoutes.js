@@ -8,7 +8,56 @@ const { moogoldProductDetail, moogoldServerList } = require("../utils/moogold");
 const productModel = require("../models/productModel");
 const md5 = require("md5");
 const querystring = require("querystring");
+const matrixSols = require('../utils/matrixSols');
 
+
+router.post('/matrix-sols/products', async (req, res) => {
+    try {
+        const { category } = req.body;
+        if (!category) return res.status(400).json({ success: false, message: 'Category required' });
+        const data = await matrixSols.listProducts(category);
+        res.json({ success: true, data: data.data });
+    } catch (error) {
+        console.error('Matrix Sols products error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Get product items (for admin)
+router.post('/matrix-sols/product-detail', async (req, res) => {
+    try {
+        const { product_id } = req.body;
+        if (!product_id) return res.status(400).json({ success: false, message: 'product_id required' });
+        const data = await matrixSols.getProductDetails(product_id);
+        res.json({ success: true, data: data.data });
+    } catch (error) {
+        console.error('Matrix Sols product detail error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+// Get server list for a product
+router.post('/matrix-sols/server-list', async (req, res) => {
+    try {
+        const { product_id } = req.body;
+        if (!product_id) return res.status(400).json({ success: false, message: 'product_id required' });
+        const data = await matrixSols.getProductServerList(product_id);
+        res.json({ success: true, data: data.data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Validate user ID
+router.post('/matrix-sols/check-id', async (req, res) => {
+    try {
+        const { product_id, user_id, server, server_region } = req.body;
+        if (!product_id || !user_id) return res.status(400).json({ success: false, message: 'product_id and user_id required' });
+        const data = await matrixSols.checkId(product_id, user_id, server, server_region);
+        res.json({ success: true, username: data.username, region: data.region });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
 
 
 // const crypto = require("crypto");

@@ -14,6 +14,7 @@ const productModel = require("../models/productModel");
 const orderModel = require("../models/orderModel");
 const paymentModel = require("../models/paymentModel");
 const querystring = require("querystring");
+const matrixSols = require('../utils/matrixSols');
 
 const generateOrderId = () => {
   const now = new Date();
@@ -685,9 +686,14 @@ async function createExternalOrder({
         productid,
         partnerOrderId,
       });
-    } else {
-      throw new Error(`provider_not_supported:${p}`);
-    }
+    }else if (p === "matrixsols") {
+    // Note: productid is the item_id from Matrix Sols
+    const orderResponse = await matrixSols.createOrder(productid, userid, zoneid, '');
+    // The response contains an order_id – store it
+    out = orderResponse.data.order_id;
+} else {
+    throw new Error(`provider_not_supported:${p}`);
+}
 
     logApi("external.result", { provider: p, external_order_id: String(out) });
     return String(out);

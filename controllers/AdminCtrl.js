@@ -23,18 +23,25 @@ const getCurrentMonthSales = async (req, res) => {
     const now = new Date();
 
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date();
 
     const result = await orderModel.aggregate([
       {
         $match: {
-          createdAt: { $gte: start, $lt: end },
+          createdAt: {
+            $gte: start,
+            $lte: end,
+          },
         },
       },
       {
         $group: {
           _id: null,
-          total: { $sum: { $toDouble: "$amount" } },
+          total: {
+            $sum: { $toDouble: "$amount" },
+          },
         },
       },
     ]);
@@ -42,7 +49,7 @@ const getCurrentMonthSales = async (req, res) => {
     return res.status(200).send({
       success: true,
       month: now.toLocaleString("default", { month: "long" }),
-      total: result.length > 0 ? result[0].total : 0,
+      total: result.length ? result[0].total : 0,
     });
   } catch (error) {
     console.log(error);

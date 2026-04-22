@@ -649,7 +649,7 @@ module.exports = {
   getUserController,
   deleteUserController,
   editUserController,
-
+  getCurrentMonthSales,
   // wallet
   adminAdjustUserBalanceController,
   adminGetWalletHistoryController,

@@ -22,17 +22,15 @@ const getCurrentMonthSales = async (req, res) => {
   try {
     const now = new Date();
 
-    // ✅ 1st day of current month
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     start.setHours(0, 0, 0, 0);
 
-    // ✅ current time
     const end = new Date();
 
     const result = await paymentModel.aggregate([
       {
         $match: {
-          payDate: {
+          createdAt: {   // ✅ FIX HERE
             $gte: start,
             $lte: end,
           },

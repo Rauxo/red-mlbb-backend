@@ -28,9 +28,10 @@ const getCurrentMonthSales = async (req, res) => {
 
     const end = new Date();
 
-    // 🔥 get raw data
+    // 🔥 get raw data — only count successful payments
     const payments = await paymentModel.find({
       createdAt: { $gte: start, $lte: end },
+      status: { $regex: /^success$/i },
     });
 
     // ✅ manual sum (safe)

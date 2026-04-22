@@ -22,39 +22,32 @@ const getCurrentMonthSales = async (req, res) => {
   try {
     const now = new Date();
 
+    // ✅ 1st day of current month
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     start.setHours(0, 0, 0, 0);
 
     const end = new Date();
 
-    const result = await paymentModel.aggregate([
-      {
-        $match: {
-          createdAt: {   // ✅ FIX HERE
-            $gte: start,
-            $lte: end,
-          },
-        },
-      },
-      {
-        $addFields: {
-          amountNumber: {
-            $toDouble: { $ifNull: ["$amount", 0] },
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$amountNumber" },
-        },
-      },
-    ]);
+    // 🔥 get raw data
+    const payments = await paymentModel.find({
+      createdAt: { $gte: start, $lte: end },
+    });
+
+    // ✅ manual sum (safe)
+    let total = 0;
+
+    payments.forEach((p) => {
+      const amt = parseFloat(p.amount);
+      if (!isNaN(amt)) {
+        total += amt;
+      }
+    });
 
     return res.status(200).send({
       success: true,
       month: now.toLocaleString("default", { month: "long" }),
-      total: result.length ? result[0].total : 0,
+      total,
+      count: payments.length, // debug
     });
   } catch (error) {
     console.log(error);

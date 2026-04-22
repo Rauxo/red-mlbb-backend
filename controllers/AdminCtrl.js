@@ -22,10 +22,11 @@ const getCurrentMonthSales = async (req, res) => {
   try {
     const now = new Date();
 
-    // 👇 1st day of current month
+    // ✅ Month start (1st date)
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     start.setHours(0, 0, 0, 0);
 
+    // ✅ Current time
     const end = new Date();
 
     const result = await paymentModel.aggregate([
@@ -35,13 +36,14 @@ const getCurrentMonthSales = async (req, res) => {
             $gte: start,
             $lte: end,
           },
-          status: "success", 
+          // ✅ handle both success & SUCCESS
+          status: { $regex: /^success$/i },
         },
       },
       {
         $addFields: {
           amountNumber: {
-            $toDouble: { $ifNull: ["$amount", 0] },
+            $toDouble: "$amount",
           },
         },
       },

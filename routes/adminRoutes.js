@@ -15,6 +15,7 @@ const {
   getAllPaymentsController,
   adminAdjustUserBalanceController,
   adminGetWalletHistoryController,
+  getCurrentMonthSales
 } = require("../controllers/AdminCtrl");
 
 const router = express.Router();
@@ -34,6 +35,7 @@ router.post("/get-user", adminAuthMiddleware, getUserController);
 router.post("/delete-user", adminAuthMiddleware, deleteUserController);
 router.post("/admin-edit-user", adminAuthMiddleware, editUserController);
 router.get("/get-all-reseller", adminAuthMiddleware, getAllResellerUsersController);
+router.get("/current-month-sales", adminAuthMiddleware, getCurrentMonthSales);
 
 router.get("/admin-get-all-orders", adminAuthMiddleware, adminGetAllOrdersController);
 router.post("/update-order", adminAuthMiddleware, adminUpdateOrderController);

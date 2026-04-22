@@ -18,6 +18,38 @@ function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(String(id || ""));
 }
 
+const getCurrentMonthSales = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    const result = await orderModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: start, $lt: end },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: { $toDouble: "$amount" } },
+        },
+      },
+    ]);
+
+    return res.status(200).send({
+      success: true,
+      month: now.toLocaleString("default", { month: "long" }),
+      total: result.length > 0 ? result[0].total : 0,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ success: false, message: error.message });
+  }
+};
+
 function getDateRange(dateStr) {
   const start = new Date(dateStr);
   if (Number.isNaN(start.getTime())) throw new Error("Invalid date format");
